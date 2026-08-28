@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Latent Image Co. — Analog Film Lab, Islamabad</title>
+<meta name="description" content="A full-service analog film lab in Islamabad — develop, scan, and print black & white and color film by hand.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#151310;
+    --paper:#EDE6D6;
+    --paper-dim:#e2d9c4;
+    --safelight:#B23A2E;
+    --amber:#C98A3E;
+    --grain:#8A8272;
+    --line: rgba(21,19,16,0.14);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    overflow-x:hidden;
+  }
+  ::selection{ background:var(--safelight); color:var(--paper); }
+
+  /* grain overlay */
+  .grain{
+    position:fixed; inset:0; pointer-events:none; z-index:50;
+    opacity:.045; mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  a{color:inherit;text-decoration:none;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--safelight);
+    display:flex; align-items:center; gap:.5rem;
+  }
+  .eyebrow::before{
+    content:'';
+    width:6px;height:6px;border-radius:50%;
+    background:var(--safelight);
+    box-shadow:0 0 8px var(--safelight);
+  }
+
+  h1,h2,h3{ font-family:'Fraunces', serif; font-weight:600; line-height:1.02; letter-spacing:-0.01em; }
+
+  /* ===== TEXT REVEAL ===== */
+  .reveal-word{
+    display:inline-block;
+    opacity:0;
+    transform:translateY(0.6em);
+    filter:blur(6px);
+    animation:wordIn .9s cubic-bezier(.16,.9,.3,1) forwards;
+  }
+  @keyframes wordIn{
+    to{ opacity:1; transform:translateY(0); filter:blur(0); }
+  }
+  .fade-up{
+    opacity:0; transform:translateY(28px);
+    transition:opacity .9s cubic-bezier(.16,.9,.3,1), transform .9s cubic-bezier(.16,.9,.3,1);
+  }
+  .fade-up.in-view{ opacity:1; transform:translateY(0); }
+
+  /* ===== MARQUEE ===== */
+  .marquee-wrap{
+    background:var(--ink);
+    color:var(--paper);
+    overflow:hidden;
+    padding:1.3rem 0;
+    border-top:1px solid rgba(237,230,214,.15);
+    border-bottom:1px solid rgba(237,230,214,.15);
+    position:relative;
+  }
+  .marquee-track{
+    display:flex;
+    width:max-content;
+    animation:marquee 26s linear infinite;
+  }
+  .marquee-track:hover{ animation-play-state:paused; }
+  .marquee-item{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:clamp(1.4rem, 3vw, 2.2rem);
+    white-space:nowrap;
+    padding:0 2.2rem;
+    display:flex; align-items:center; gap:2.2rem;
+  }
+  .marquee-item::after{
+    content:'●';
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.6rem;
+    color:var(--safelight);
+  }
+  @keyframes marquee{
+    from{ transform:translateX(0); }
+    to{ transform:translateX(-50%); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .marquee-track{ animation:none; }
+    .reveal-word{ animation:none; opacity:1; transform:none; filter:none; }
+    .fade-up{ opacity:1; transform:none; transition:none; }
+  }
+
+  /* ===== SCROLL TO TOP ===== */
+  .to-top{
+    position:fixed;
+    right:2.2rem; bottom:2.2rem;
+    z-index:60;
+    width:52px; height:52px;
+    border-radius:50%;
+    background:var(--ink);
+    color:var(--paper);
+    border:1px solid rgba(237,230,214,.25);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:1rem;
+    opacity:0; visibility:hidden; transform:translateY(12px);
+    transition:opacity .35s ease, transform .35s ease, background .25s ease, visibility .35s;
+  }
+  .to-top.show{ opacity:1; visibility:visible; transform:translateY(0); }
+  .to-top:hover{ background:var(--safelight); }
+  .to-top svg{ width:18px; height:18px; }
+  @media (max-width:600px){ .to-top{ right:1.2rem; bottom:1.2rem; width:46px; height:46px; } }
+
+  /* ===== PRELOADER ===== */
+  .preloader{
+    position:fixed; inset:0; z-index:100;
+    background:var(--ink);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:opacity .8s ease, visibility .8s ease;
+  }
+  .preloader.hide{ opacity:0; visibility:hidden; }
+  .preloader .mark{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--paper);
+    font-size:.8rem;
+    letter-spacing:.14em;
+    margin-bottom:1.4rem;
+    opacity:.75;
+  }
+  .preloader .bar{
+    width:220px; height:1px;
+    background:rgba(237,230,214,.25);
+    position:relative;
+    overflow:hidden;
+  }
+  .preloader .bar::after{
+    content:'';
+    position:absolute; left:0; top:0; bottom:0;
+    width:0%;
+    background:var(--safelight);
+    animation:load 1.3s cubic-bezier(.65,0,.35,1) forwards;
+  }
+  @keyframes load{ to{ width:100%; } }
+  /* no-JS fallback: auto-dismiss the preloader via a CSS timer */
+  .no-js .preloader{
+    animation: preloaderOut .6s ease forwards;
+    animation-delay:1.6s;
+    pointer-events:none;
+  }
+  @keyframes preloaderOut{ to{ opacity:0; visibility:hidden; } }
+
+  /* ===== CUSTOM CURSOR ===== */
+  .cursor-dot, .cursor-ring{
+    position:fixed; top:0; left:0;
+    pointer-events:none;
+    z-index:90;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+  }
+  .cursor-dot{
+    width:6px; height:6px;
+    background:var(--safelight);
+  }
+  .cursor-ring{
+    width:38px; height:38px;
+    border:1px solid rgba(21,19,16,.4);
+    transition:width .25s ease, height .25s ease, border-color .25s ease, background .25s ease;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cursor-ring .ring-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.55rem;
+    letter-spacing:.05em;
+    color:var(--ink);
+    opacity:0;
+    transition:opacity .2s ease;
+    white-space:nowrap;
+  }
+  .cursor-ring.big{ width:78px; height:78px; background:var(--paper); border-color:var(--ink); }
+  .cursor-ring.big .ring-label{ opacity:1; }
+  .cursor-ring.on-dark{ border-color:rgba(237,230,214,.5); }
+  .cursor-ring.on-dark.big{ background:var(--paper); }
+  @media (hover:none), (pointer:coarse){
+    .cursor-dot, .cursor-ring{ display:none; }
+  }
+
+  /* focus visibility for accessibility */
+  a:focus-visible, button:focus-visible{
+    outline:2px solid var(--safelight);
+    outline-offset:3px;
+  }
+
+  /* ===== NAV ===== */
+  nav{
+    position:fixed; top:0; left:0; right:0; z-index:40;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:1.4rem 5vw;
+    mix-blend-mode:difference;
+    color:#fff;
+    transition:padding .3s ease;
+  }
+  .nav-mark{ font-family:'IBM Plex Mono',monospace; font-size:.85rem; letter-spacing:.08em; }
+  .nav-links{ display:flex; gap:2rem; font-family:'IBM Plex Mono',monospace; font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; }
+  .nav-links a{ opacity:.75; transition:opacity .25s; position:relative; }
+  .nav-links a::after{
+    content:''; position:absolute; left:0; bottom:-4px; width:0; height:1px;
+    background:currentColor; transition:width .3s cubic-bezier(.65,0,.35,1);
+  }
+  .nav-links a:hover{ opacity:1; }
+  .nav-links a:hover::after{ width:100%; }
+  @media (max-width:720px){ .nav-links{ display:none; } }
+
+  /* ===== HERO / FILM STRIP ===== */
+  .hero{
+    position:relative;
+    min-height:100vh;
+    display:flex;
+    padding-left:64px;
+  }
+  .sprockets{
+    position:fixed;
+    left:0; top:0; bottom:0;
+    width:64px;
+    background:var(--ink);
+    display:flex; flex-direction:column; align-items:center;
+    padding:14px 0;
+    gap:14px;
+    z-index:30;
+  }
+  .sprockets span{
+    width:16px; height:22px;
+    border-radius:4px;
+    background:var(--paper);
+    flex-shrink:0;
+    opacity:.9;
+  }
+
+  .hero-inner{
+    flex:1;
+    display:flex; flex-direction:column; justify-content:center;
+    padding:8vh 6vw 6vh 6vw;
+    max-width:1200px;
+  }
+  .frame-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.7rem;
+    color:var(--grain);
+    letter-spacing:.08em;
+    margin-bottom:2rem;
+  }
+  .hero h1{
+    font-size:clamp(2.6rem, 7vw, 6.4rem);
+    max-width:16ch;
+  }
+  .hero h1 em{
+    font-style:italic;
+    color:var(--safelight);
+  }
+  .hero p{
+    font-size:1.05rem;
+    color:#3d372c;
+    max-width:38ch;
+    margin-top:1.6rem;
+    line-height:1.55;
+  }
+  .hero-cta{
+    display:flex; gap:1rem; margin-top:2.6rem; flex-wrap:wrap;
+  }
+  .btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.78rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    padding:.95rem 1.6rem;
+    border:1px solid var(--ink);
+    transition:all .25s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
+    position:relative;
+    overflow:hidden;
+    display:inline-block;
+  }
+  .btn span{ position:relative; z-index:2; }
+  .btn::before{
+    content:'';
+    position:absolute; inset:0;
+    transform:translateX(-101%);
+    transition:transform .35s cubic-bezier(.65,0,.35,1);
+    z-index:1;
+  }
+  .btn-solid{ background:var(--ink); color:var(--paper); }
+  .btn-solid::before{ background:var(--safelight); }
+  .btn-solid:hover::before{ transform:translateX(0); }
+  .btn-solid:hover{ border-color:var(--safelight); }
+  .btn-ghost::before{ background:var(--ink); }
+  .btn-ghost:hover::before{ transform:translateX(0); }
+  .btn-ghost:hover{ color:var(--paper); }
+
+  .hero-strip{
+    position:absolute;
+    right:5vw; top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:.5rem;
+    opacity:.5;
+  }
+  @media (max-width:900px){ .hero-strip{ display:none; } }
+  .hero-strip .cell{
+    width:70px; height:52px;
+    background:var(--ink);
+    filter:invert(1) contrast(1.4) brightness(1.6);
+  }
+
+  /* ===== SECTION SHARED ===== */
+  section{ position:relative; padding:8vh 6vw; }
+  .section-head{ display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:4vh; gap:2rem; flex-wrap:wrap; }
+  .section-head h2{ font-size:clamp(2rem,4vw,3.2rem); }
+  .section-head p{ max-width:32ch; color:var(--grain); font-size:.95rem; }
+
+  /* ===== DEVELOPING GALLERY ===== */
+  .develop-section{ background:var(--ink); color:var(--paper); }
+  .develop-section .eyebrow{ color:var(--amber); }
+  .develop-section .eyebrow::before{ background:var(--amber); box-shadow:0 0 8px var(--amber); }
+  .develop-section p.lead{ color:#c9c2b3; }
+
+  .gallery{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:1px;
+    background:rgba(237,230,214,0.12);
+    margin-top:4vh;
+  }
+  @media (max-width:800px){ .gallery{ grid-template-columns:repeat(2,1fr); } }
+  .plate{
+    position:relative;
+    aspect-ratio:4/5;
+    background:var(--ink);
+    overflow:hidden;
+  }
+  .plate svg{
+    width:100%; height:100%; display:block;
+  }
+  .plate .neg{
+    filter:invert(1) contrast(1.7) brightness(.75) saturate(0);
+    opacity:.6;
+    transform:scale(1.04);
+    transition:filter 1.5s cubic-bezier(.16,.9,.3,1), opacity 1.5s ease, transform 1.7s ease;
+  }
+  .plate.developed .neg{
+    filter:invert(0) contrast(1) brightness(1) saturate(1);
+    opacity:1;
+    transform:scale(1);
+  }
+  /* no-JS / restricted-sandbox fallback: develop automatically on a staggered timer */
+  @keyframes develop{
+    to{ filter:invert(0) contrast(1) brightness(1) saturate(1); opacity:1; transform:scale(1); }
+  }
+  .no-js .plate .neg,
+  .plate .neg{
+    animation: develop 1.6s cubic-bezier(.16,.9,.3,1) forwards;
+    animation-play-state:paused;
+  }
+  .js-ready .plate .neg{ animation-play-state:paused; }
+  .no-js .plate:nth-child(1) .neg{ animation-delay:.3s; animation-play-state:running; }
+  .no-js .plate:nth-child(2) .neg{ animation-delay:.6s; animation-play-state:running; }
+  .no-js .plate:nth-child(3) .neg{ animation-delay:.9s; animation-play-state:running; }
+  .no-js .plate:nth-child(4) .neg{ animation-delay:1.2s; animation-play-state:running; }
+  .no-js .plate:nth-child(5) .neg{ animation-delay:1.5s; animation-play-state:running; }
+  .no-js .plate:nth-child(6) .neg{ animation-delay:1.8s; animation-play-state:running; }
+  .plate .tag{
+    position:absolute; left:.9rem; bottom:.9rem;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.68rem; letter-spacing:.05em;
+    color:var(--paper);
+    background:rgba(21,19,16,.55);
+    padding:.25rem .5rem;
+    opacity:0; transition:opacity .6s ease .3s;
+  }
+  .plate.developed .tag{ opacity:1; }
+
+  /* ===== STATS STRIP ===== */
+  .stats{
+    background:var(--paper);
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  @media (max-width:760px){ .stats{ grid-template-columns:1fr 1fr; } }
+  .stat{
+    padding:3.4rem 1.5rem;
+    text-align:center;
+    border-right:1px solid var(--line);
+  }
+  .stat:last-child{ border-right:none; }
+  @media (max-width:760px){ .stat:nth-child(2n){ border-right:none; } .stat{ border-bottom:1px solid var(--line); } }
+  .stat .num{
+    font-family:'Fraunces',serif;
+    font-size:clamp(2.2rem,4.5vw,3.4rem);
+    font-weight:600;
+    color:var(--safelight);
+  }
+  .stat .label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.7rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--grain);
+    margin-top:.5rem;
+  }
+
+  /* ===== TESTIMONIALS ===== */
+  .testimonials{ background:var(--paper-dim); }
+  .quotes{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:1px;
+    background:var(--line);
+    margin-top:4vh;
+  }
+  @media (max-width:900px){ .quotes{ grid-template-columns:1fr; } }
+  .quote{
+    background:var(--paper-dim);
+    padding:2.6rem 2rem;
+    display:flex; flex-direction:column; justify-content:space-between;
+  }
+  .quote p{
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    font-size:1.15rem;
+    line-height:1.5;
+    margin-bottom:1.6rem;
+  }
+  .quote .who{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.72rem;
+    letter-spacing:.04em;
+    color:var(--grain);
+    display:flex; justify-content:space-between;
+  }
+  .services{ background:var(--paper); }
+  .log{
+    border-top:1px solid var(--line);
+  }
+  .log-row{
+    display:grid;
+    grid-template-columns:70px 1fr 1fr 140px;
+    gap:1.5rem;
+    align-items:center;
+    padding:1.6rem 0;
+    border-bottom:1px solid var(--line);
+  }
+  .log-row:hover{ background:rgba(178,58,46,0.04); }
+  @media (max-width:760px){
+    .log-row{ grid-template-columns:40px 1fr; row-gap:.4rem; }
+    .log-row .price, .log-row .desc{ grid-column:2; }
+  }
+  .log-row .idx{ font-family:'IBM Plex Mono',monospace; color:var(--safelight); font-size:.85rem; }
+  .log-row h3{ font-size:1.4rem; font-weight:500; }
+  .log-row .desc{ color:var(--grain); font-size:.9rem; }
+  .log-row .price{ font-family:'IBM Plex Mono',monospace; font-size:.85rem; text-align:right; }
+  @media (max-width:760px){ .log-row .price{ text-align:left; } }
+
+  /* ===== PROCESS ===== */
+  .process{ background:var(--paper-dim); }
+  .steps{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:2px;
+    background:var(--line);
+    margin-top:4vh;
+  }
+  @media (max-width:800px){ .steps{ grid-template-columns:1fr 1fr; } }
+  .step{ background:var(--paper-dim); padding:2.4rem 1.6rem; }
+  .step .num{ font-family:'IBM Plex Mono',monospace; color:var(--safelight); font-size:.8rem; margin-bottom:1.2rem; display:block; }
+  .step h3{ font-size:1.3rem; margin-bottom:.6rem; }
+  .step p{ font-size:.88rem; color:var(--grain); line-height:1.5; }
+
+  /* ===== CONTACT ===== */
+  .contact{ background:var(--ink); color:var(--paper); text-align:center; padding-top:12vh; padding-bottom:12vh; }
+  .contact .eyebrow{ justify-content:center; color:var(--amber); }
+  .contact .eyebrow::before{ background:var(--amber); box-shadow:0 0 8px var(--amber); }
+  .contact h2{ font-size:clamp(2.4rem,6vw,4.6rem); margin:1.4rem auto; max-width:16ch; }
+  .contact .btn-solid{ background:var(--amber); color:var(--ink); border-color:var(--amber); margin-top:1rem; display:inline-block; }
+  .contact .btn-solid:hover{ background:var(--paper); border-color:var(--paper); }
+
+  footer{
+    background:var(--ink); color:var(--grain);
+    font-family:'IBM Plex Mono',monospace; font-size:.72rem;
+    display:flex; justify-content:space-between; padding:1.6rem 6vw 2.4rem;
+    letter-spacing:.04em;
+  }
+  @media (max-width:600px){ footer{ flex-direction:column; gap:.6rem; } }
+</style>
+</head>
+<body class="no-js loading">
+
+<div class="preloader" id="preloader">
+  <div class="mark">LATENT IMAGE CO.</div>
+  <div class="bar"></div>
+</div>
+
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"><span class="ring-label" id="cursorLabel"></span></div>
+
+<div class="grain"></div>
+
+<div class="sprockets" id="sprockets"></div>
+
+<nav>
+  <div class="nav-mark">LATENT IMAGE CO.</div>
+  <div class="nav-links">
+    <a href="#develop">Gallery</a>
+    <a href="#services">Services</a>
+    <a href="#process">Process</a>
+    <a href="#contact">Drop Off</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="frame-label">FRAME 001 — ISLAMABAD, PK — KODAK PORTRA 400</div>
+    <h1 id="hero-headline">Real film,<br>developed by <em>hand</em>,<br>not an algorithm.</h1>
+    <p>A working darkroom in Islamabad — black & white and color processing, hand scanning, and fiber prints. No app, no upload queue. Just a lab.</p>
+    <div class="hero-cta">
+      <a class="btn btn-solid" href="#contact"><span>Drop off a roll</span></a>
+      <a class="btn btn-ghost" href="#develop"><span>See the negatives</span></a>
+    </div>
+  </div>
+  <div class="hero-strip">
+    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+  </div>
+</section>
+
+<div class="marquee-wrap">
+  <div class="marquee-track" id="marqueeTrack">
+    <span class="marquee-item">Kodak Tri-X 400</span>
+    <span class="marquee-item">Ilford HP5 Plus</span>
+    <span class="marquee-item">Kodak Portra 160</span>
+    <span class="marquee-item">Kodak Ektar 100</span>
+    <span class="marquee-item">Fujifilm 400H</span>
+    <span class="marquee-item">Hand-developed since 2019</span>
+  </div>
+</div>
+
+<section class="develop-section" id="develop">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">Contact sheet</div>
+      <h2>Watch it develop.</h2>
+    </div>
+    <p class="lead">Every print starts as a negative in a tray of chemistry. Scroll — these do the same.</p>
+  </div>
+  <div class="gallery" id="gallery">
+
+    <div class="plate">
+      <svg class="neg" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="500" fill="#e7dcc4"/>
+        <circle cx="200" cy="150" r="90" fill="#f2eadb"/>
+        <rect x="0" y="330" width="400" height="170" fill="#8a7a56"/>
+        <path d="M0 330 L140 220 L230 300 L400 190 L400 330 Z" fill="#5c5138"/>
+        <rect x="0" y="0" width="400" height="500" fill="#151310" opacity="0.06"/>
+      </svg>
+      <span class="tag">TRI-X 400 · f/2.8 · PORTRAIT</span>
+    </div>
+
+    <div class="plate">
+      <svg class="neg" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="500" fill="#d7cbb0"/>
+        <rect x="0" y="0" width="400" height="260" fill="#c3a980"/>
+        <rect x="0" y="260" width="400" height="240" fill="#efe6d3"/>
+        <rect x="40" y="150" width="10" height="200" fill="#3d3627"/>
+        <rect x="130" y="90" width="10" height="260" fill="#3d3627"/>
+        <rect x="260" y="130" width="10" height="220" fill="#3d3627"/>
+        <rect x="340" y="70" width="10" height="280" fill="#3d3627"/>
+      </svg>
+      <span class="tag">PORTRA 160 · f/4 · STREET</span>
+    </div>
+
+    <div class="plate">
+      <svg class="neg" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="500" fill="#f0e9d8"/>
+        <circle cx="120" cy="200" r="150" fill="#c9b98f"/>
+        <circle cx="300" cy="350" r="110" fill="#a89468"/>
+        <rect x="0" y="0" width="400" height="500" fill="#151310" opacity="0.05"/>
+      </svg>
+      <span class="tag">HP5 PLUS · f/5.6 · STILL LIFE</span>
+    </div>
+
+    <div class="plate">
+      <svg class="neg" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="500" fill="#e3d4b8"/>
+        <path d="M0 500 L0 260 L100 180 L200 260 L280 150 L400 240 L400 500 Z" fill="#7c6a45"/>
+        <path d="M0 500 L0 380 L120 320 L240 380 L400 310 L400 500 Z" fill="#4a4030"/>
+        <circle cx="330" cy="90" r="34" fill="#f5eeda"/>
+      </svg>
+      <span class="tag">EKTAR 100 · f/8 · LANDSCAPE</span>
+    </div>
+
+    <div class="plate">
+      <svg class="neg" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="500" fill="#d9cdb2"/>
+        <circle cx="200" cy="180" r="80" fill="#f2eadb"/>
+        <rect x="130" y="250" width="140" height="250" fill="#8a7a56"/>
+        <rect x="0" y="0" width="400" height="500" fill="#151310" opacity="0.08"/>
+      </svg>
+      <span class="tag">TRI-X 400 · f/2 · PORTRAIT</span>
+    </div>
+
+    <div class="plate">
+      <svg class="neg" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">
+        <rect width="400" height="500" fill="#efe6d0"/>
+        <rect x="0" y="140" width="400" height="20" fill="#3d3627"/>
+        <rect x="0" y="220" width="400" height="8" fill="#3d3627"/>
+        <rect x="0" y="300" width="400" height="34" fill="#8a7a56"/>
+        <rect x="0" y="400" width="400" height="6" fill="#3d3627"/>
+      </svg>
+      <span class="tag">PORTRA 400 · f/2.8 · ARCHITECTURE</span>
+    </div>
+
+  </div>
+</section>
+
+<section class="stats">
+  <div class="stat"><div class="num">6,400+</div><div class="label">Rolls Developed</div></div>
+  <div class="stat"><div class="num">98%</div><div class="label">Returning Customers</div></div>
+  <div class="stat"><div class="num">48h</div><div class="label">Average Turnaround</div></div>
+  <div class="stat"><div class="num">6</div><div class="label">Years in the Darkroom</div></div>
+</section>
+
+<section class="testimonials">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">Word of mouth</div>
+      <h2>From people who shoot film.</h2>
+    </div>
+  </div>
+  <div class="quotes">
+    <div class="quote">
+      <p>"First lab in the city that hasn't scratched a single negative of mine. My scans finally look like the film, not like a phone photo of the film."</p>
+      <div class="who"><span>— A. Raza</span><span>STREET SHOOTER</span></div>
+    </div>
+    <div class="quote">
+      <p>"I shot a wedding on Portra and was terrified to hand off the rolls. Got them back in two days, color was perfect. Never going digital-only again."</p>
+      <div class="who"><span>— S. Fatima</span><span>WEDDING PHOTOGRAPHER</span></div>
+    </div>
+    <div class="quote">
+      <p>"The push-processing on my HP5 came out exactly how I hoped. You can tell an actual person is running this lab, not a machine."</p>
+      <div class="who"><span>— B. Malik</span><span>FILM STUDENT</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="services" id="services">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">Lab log</div>
+      <h2>Services & pricing</h2>
+    </div>
+    <p>Straightforward, per roll. No memberships, no subscriptions.</p>
+  </div>
+  <div class="log">
+    <div class="log-row">
+      <span class="idx">01</span>
+      <h3>Develop only</h3>
+      <span class="desc">C-41 or B&W, hand-processed same day.</span>
+      <span class="price">PKR 900 / roll</span>
+    </div>
+    <div class="log-row">
+      <span class="idx">02</span>
+      <h3>Develop + scan</h3>
+      <span class="desc">High-res scans, delivered digitally within 48h.</span>
+      <span class="price">PKR 1,600 / roll</span>
+    </div>
+    <div class="log-row">
+      <span class="idx">03</span>
+      <h3>Fiber prints</h3>
+      <span class="desc">Hand-printed in the darkroom, archival paper.</span>
+      <span class="price">From PKR 450 / print</span>
+    </div>
+    <div class="log-row">
+      <span class="idx">04</span>
+      <h3>Push / pull processing</h3>
+      <span class="desc">Shot at a different ISO? We'll compensate in the chemistry.</span>
+      <span class="price">+PKR 300 / roll</span>
+    </div>
+  </div>
+</section>
+
+<section class="process" id="process">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">How it works</div>
+      <h2>Roll to result.</h2>
+    </div>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <span class="num">01 / DROP</span>
+      <h3>Bring your roll</h3>
+      <p>In person or by courier. We log it, you get a claim ticket.</p>
+    </div>
+    <div class="step">
+      <span class="num">02 / SOAK</span>
+      <h3>Hand development</h3>
+      <p>Chemistry mixed and timed by hand, not a machine on autopilot.</p>
+    </div>
+    <div class="step">
+      <span class="num">03 / SCAN</span>
+      <h3>High-res capture</h3>
+      <p>Every negative scanned individually, dust and grain intact.</p>
+    </div>
+    <div class="step">
+      <span class="num">04 / DELIVER</span>
+      <h3>Ready in 48h</h3>
+      <p>Digital gallery link, plus your negatives back in a sleeve.</p>
+    </div>
+  </div>
+</section>
+
+<section class="contact" id="contact">
+  <div class="eyebrow" style="justify-content:center">Ready when you are</div>
+  <h2>Bring us a roll. We'll bring it to light.</h2>
+  <a class="btn btn-solid" href="mailto:hello@latentimageco.com"><span>hello@latentimageco.com</span></a>
+</section>
+
+<footer>
+  <span>© 2026 LATENT IMAGE CO. — ISLAMABAD</span>
+  <span>DEMO / CONCEPT SITE — DEVELOPED BY SHAKIR HUSSAIN</span>
+</footer>
+
+<button class="to-top" id="toTop" aria-label="Scroll to top">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="12" y1="19" x2="12" y2="5"></line>
+    <polyline points="5 12 12 5 19 12"></polyline>
+  </svg>
+</button>
+
+<script>
+  // JS is running: hand control back to the scroll-triggered version
+  document.body.classList.remove('no-js');
+  document.body.classList.add('js-ready');
+
+  // preloader
+  window.addEventListener('load', ()=>{
+    setTimeout(()=>{
+      const pre = document.getElementById('preloader');
+      pre.classList.add('hide');
+      document.body.classList.remove('loading');
+    }, 900);
+  });
+  // safety net in case 'load' is delayed/blocked in a sandbox
+  setTimeout(()=>{
+    const pre = document.getElementById('preloader');
+    if(pre && !pre.classList.contains('hide')){
+      pre.classList.add('hide');
+      document.body.classList.remove('loading');
+    }
+  }, 2200);
+
+  // custom cursor
+  const dot = document.getElementById('cursorDot');
+  const ring = document.getElementById('cursorRing');
+  const label = document.getElementById('cursorLabel');
+  let mx=0,my=0, rx=0,ry=0;
+  window.addEventListener('mousemove', (e)=>{
+    mx = e.clientX; my = e.clientY;
+    dot.style.left = mx+'px'; dot.style.top = my+'px';
+  });
+  const ringLoop = ()=>{
+    rx += (mx-rx)*0.18; ry += (my-ry)*0.18;
+    ring.style.left = rx+'px'; ring.style.top = ry+'px';
+    requestAnimationFrame(ringLoop);
+  };
+  ringLoop();
+
+  const setCursor = (big, text, onDark)=>{
+    ring.classList.toggle('big', !!big);
+    ring.classList.toggle('on-dark', !!onDark);
+    label.textContent = text || '';
+  };
+  document.querySelectorAll('.plate').forEach(p=>{
+    p.addEventListener('mouseenter', ()=>setCursor(true, 'VIEW'));
+    p.addEventListener('mouseleave', ()=>setCursor(false, ''));
+  });
+  document.querySelectorAll('.btn').forEach(b=>{
+    b.addEventListener('mouseenter', ()=>setCursor(true, ''));
+    b.addEventListener('mouseleave', ()=>setCursor(false, ''));
+  });
+  document.querySelectorAll('.develop-section .plate, .contact .btn').forEach(el=>{
+    el.addEventListener('mouseenter', ()=>ring.classList.add('on-dark'));
+    el.addEventListener('mouseleave', ()=>ring.classList.remove('on-dark'));
+  });
+
+  // magnetic buttons
+  document.querySelectorAll('.btn').forEach(btn=>{
+    btn.addEventListener('mousemove', (e)=>{
+      const r = btn.getBoundingClientRect();
+      const relX = e.clientX - r.left - r.width/2;
+      const relY = e.clientY - r.top - r.height/2;
+      btn.style.transform = `translate(${relX*0.18}px, ${relY*0.35}px)`;
+    });
+    btn.addEventListener('mouseleave', ()=>{ btn.style.transform = 'translate(0,0)'; });
+  });
+
+  // sprockets
+  const sprocketWrap = document.getElementById('sprockets');
+  const count = Math.ceil(window.innerHeight / 36) + 2;
+  for(let i=0;i<count;i++){
+    const s = document.createElement('span');
+    sprocketWrap.appendChild(s);
+  }
+
+  // scroll-triggered "development"
+  const plates = document.querySelectorAll('.plate');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add('developed');
+      }
+    });
+  }, { threshold: 0.4 });
+  plates.forEach(p=>io.observe(p));
+
+  // split hero headline into animated words
+  const headline = document.getElementById('hero-headline');
+  if(headline){
+    const walk = (node)=>{
+      node.childNodes.forEach(child=>{
+        if(child.nodeType === 3){ // text node
+          const frag = document.createDocumentFragment();
+          child.textContent.split(/(\s+)/).forEach(part=>{
+            if(part.trim() === ''){
+              frag.appendChild(document.createTextNode(part));
+            } else {
+              const span = document.createElement('span');
+              span.className = 'reveal-word';
+              span.textContent = part;
+              frag.appendChild(span);
+            }
+          });
+          child.replaceWith(frag);
+        } else if(child.nodeType === 1){
+          walk(child);
+        }
+      });
+    };
+    walk(headline);
+    headline.querySelectorAll('.reveal-word').forEach((w,i)=>{
+      w.style.animationDelay = (0.15 + i*0.055) + 's';
+    });
+  }
+
+  // fade-up reveal for section heads / rows as they enter view
+  document.querySelectorAll('.section-head, .log-row, .step, .stat, .quote').forEach(el=>{
+    el.classList.add('fade-up');
+  });
+  const fadeIo = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add('in-view');
+        fadeIo.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.fade-up').forEach(el=>fadeIo.observe(el));
+
+  // duplicate marquee content for a seamless infinite loop
+  const track = document.getElementById('marqueeTrack');
+  if(track){ track.innerHTML += track.innerHTML; }
+
+  // scroll to top button
+  const toTop = document.getElementById('toTop');
+  window.addEventListener('scroll', ()=>{
+    if(window.scrollY > 500){ toTop.classList.add('show'); }
+    else{ toTop.classList.remove('show'); }
+  });
+  toTop.addEventListener('click', ()=>{
+    window.scrollTo({ top:0, behavior:'smooth' });
+  });
+</script>
+
+</body>
+</html>
