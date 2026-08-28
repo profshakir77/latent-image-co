@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Latent Image Co. — Analog Film Lab, Islamabad</title>
-<meta name="description" content="A full-service analog film lab in Islamabad — develop, scan, and print black & white and color film by hand.">
+<title>Latent Image Co. | Analog Film Lab, Islamabad</title>
+<meta name="description" content="A full-service analog film lab in Islamabad. Develop, scan, and print black & white and color film by hand.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -216,14 +216,35 @@
   nav{
     position:fixed; top:0; left:0; right:0; z-index:40;
     display:flex; justify-content:space-between; align-items:center;
-    padding:1.4rem 5vw;
+    padding:1.6rem 5vw;
     mix-blend-mode:difference;
     color:#fff;
-    transition:padding .3s ease;
+    transition:padding .35s ease, background .35s ease, backdrop-filter .35s ease;
   }
-  .nav-mark{ font-family:'IBM Plex Mono',monospace; font-size:.85rem; letter-spacing:.08em; }
-  .nav-links{ display:flex; gap:2rem; font-family:'IBM Plex Mono',monospace; font-size:.75rem; letter-spacing:.06em; text-transform:uppercase; }
-  .nav-links a{ opacity:.75; transition:opacity .25s; position:relative; }
+  nav.scrolled{
+    padding:1.05rem 5vw;
+    mix-blend-mode:normal;
+    color:var(--ink);
+    background:rgba(237,230,214,0.82);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-mark{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:1.15rem;
+    letter-spacing:.01em;
+    display:flex; align-items:center; gap:.6rem;
+  }
+  .nav-mark .dot{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--safelight);
+    box-shadow:0 0 10px var(--safelight);
+    flex-shrink:0;
+  }
+  .nav-links{ display:flex; gap:2.2rem; font-family:'IBM Plex Mono',monospace; font-size:.76rem; letter-spacing:.06em; text-transform:uppercase; font-weight:500; }
+  .nav-links a{ opacity:.8; transition:opacity .25s; position:relative; }
   .nav-links a::after{
     content:''; position:absolute; left:0; bottom:-4px; width:0; height:1px;
     background:currentColor; transition:width .3s cubic-bezier(.65,0,.35,1);
@@ -231,6 +252,40 @@
   .nav-links a:hover{ opacity:1; }
   .nav-links a:hover::after{ width:100%; }
   @media (max-width:720px){ .nav-links{ display:none; } }
+
+  .nav-toggle{
+    display:none;
+    width:32px; height:20px;
+    position:relative;
+    background:none; border:none; cursor:pointer;
+    padding:0;
+  }
+  .nav-toggle span{
+    position:absolute; left:0; right:0; height:1.5px;
+    background:currentColor;
+    transition:transform .3s ease, opacity .3s ease, top .3s ease;
+  }
+  .nav-toggle span:first-child{ top:2px; }
+  .nav-toggle span:last-child{ bottom:2px; top:16px; }
+  .nav-toggle.open span:first-child{ top:9px; transform:rotate(45deg); }
+  .nav-toggle.open span:last-child{ top:9px; transform:rotate(-45deg); }
+  @media (max-width:720px){ .nav-toggle{ display:block; } }
+
+  .mobile-menu{
+    position:fixed; inset:0; z-index:35;
+    background:var(--ink);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2rem;
+    transform:translateY(-100%);
+    transition:transform .45s cubic-bezier(.65,0,.35,1);
+  }
+  .mobile-menu.open{ transform:translateY(0); }
+  .mobile-menu a{
+    font-family:'Fraunces',serif;
+    font-size:2rem;
+    color:var(--paper);
+  }
+  @media (min-width:721px){ .mobile-menu{ display:none; } }
 
   /* ===== HERO / FILM STRIP ===== */
   .hero{
@@ -523,21 +578,31 @@
 
 <div class="sprockets" id="sprockets"></div>
 
-<nav>
-  <div class="nav-mark">LATENT IMAGE CO.</div>
+<nav id="siteNav">
+  <div class="nav-mark"><span class="dot"></span>LATENT IMAGE CO.</div>
   <div class="nav-links">
     <a href="#develop">Gallery</a>
     <a href="#services">Services</a>
     <a href="#process">Process</a>
     <a href="#contact">Drop Off</a>
   </div>
+  <button class="nav-toggle" id="navToggle" aria-label="Open menu">
+    <span></span><span></span>
+  </button>
 </nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#develop">Gallery</a>
+  <a href="#services">Services</a>
+  <a href="#process">Process</a>
+  <a href="#contact">Drop Off</a>
+</div>
 
 <section class="hero">
   <div class="hero-inner">
-    <div class="frame-label">FRAME 001 — ISLAMABAD, PK — KODAK PORTRA 400</div>
+    <div class="frame-label">FRAME 001 / ISLAMABAD, PK / KODAK PORTRA 400</div>
     <h1 id="hero-headline">Real film,<br>developed by <em>hand</em>,<br>not an algorithm.</h1>
-    <p>A working darkroom in Islamabad — black & white and color processing, hand scanning, and fiber prints. No app, no upload queue. Just a lab.</p>
+    <p>A working darkroom in Islamabad, doing black & white and color processing, hand scanning, and fiber prints. No app, no upload queue. Just a lab.</p>
     <div class="hero-cta">
       <a class="btn btn-solid" href="#contact"><span>Drop off a roll</span></a>
       <a class="btn btn-ghost" href="#develop"><span>See the negatives</span></a>
@@ -565,7 +630,7 @@
       <div class="eyebrow">Contact sheet</div>
       <h2>Watch it develop.</h2>
     </div>
-    <p class="lead">Every print starts as a negative in a tray of chemistry. Scroll — these do the same.</p>
+    <p class="lead">Every print starts as a negative in a tray of chemistry. Scroll down and watch these do the same.</p>
   </div>
   <div class="gallery" id="gallery">
 
@@ -654,15 +719,15 @@
   <div class="quotes">
     <div class="quote">
       <p>"First lab in the city that hasn't scratched a single negative of mine. My scans finally look like the film, not like a phone photo of the film."</p>
-      <div class="who"><span>— A. Raza</span><span>STREET SHOOTER</span></div>
+      <div class="who"><span>A. Raza</span><span>STREET SHOOTER</span></div>
     </div>
     <div class="quote">
       <p>"I shot a wedding on Portra and was terrified to hand off the rolls. Got them back in two days, color was perfect. Never going digital-only again."</p>
-      <div class="who"><span>— S. Fatima</span><span>WEDDING PHOTOGRAPHER</span></div>
+      <div class="who"><span>S. Fatima</span><span>WEDDING PHOTOGRAPHER</span></div>
     </div>
     <div class="quote">
       <p>"The push-processing on my HP5 came out exactly how I hoped. You can tell an actual person is running this lab, not a machine."</p>
-      <div class="who"><span>— B. Malik</span><span>FILM STUDENT</span></div>
+      <div class="who"><span>B. Malik</span><span>FILM STUDENT</span></div>
     </div>
   </div>
 </section>
@@ -741,8 +806,8 @@
 </section>
 
 <footer>
-  <span>© 2026 LATENT IMAGE CO. — ISLAMABAD</span>
-  <span>DEMO / CONCEPT SITE — DEVELOPED BY SHAKIR HUSSAIN</span>
+  <span>© 2026 LATENT IMAGE CO. / ISLAMABAD</span>
+  <span>DEMO / CONCEPT SITE, DEVELOPED BY SHAKIR HUSSAIN</span>
 </footer>
 
 <button class="to-top" id="toTop" aria-label="Scroll to top">
@@ -884,6 +949,25 @@
   // duplicate marquee content for a seamless infinite loop
   const track = document.getElementById('marqueeTrack');
   if(track){ track.innerHTML += track.innerHTML; }
+
+  // nav background on scroll + mobile menu toggle
+  const nav = document.getElementById('siteNav');
+  window.addEventListener('scroll', ()=>{
+    if(window.scrollY > 60){ nav.classList.add('scrolled'); }
+    else{ nav.classList.remove('scrolled'); }
+  });
+  const navToggle = document.getElementById('navToggle');
+  const mobileMenu = document.getElementById('mobileMenu');
+  navToggle.addEventListener('click', ()=>{
+    navToggle.classList.toggle('open');
+    mobileMenu.classList.toggle('open');
+  });
+  mobileMenu.querySelectorAll('a').forEach(a=>{
+    a.addEventListener('click', ()=>{
+      navToggle.classList.remove('open');
+      mobileMenu.classList.remove('open');
+    });
+  });
 
   // scroll to top button
   const toTop = document.getElementById('toTop');
